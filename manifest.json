@@ -1,1 +1,64 @@
+from js import document, window
+import json
+from pyodide.http import pyfetch
+
+# --- CONFIGURATION ---
+API_KEY = "YOUR_GEMINI_API_KEY_HERE"projects/650261417670  # <--- Put your key here!
+URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+
+async def send_message(event):
+    user_input = document.getElementById("user-input")
+    query = user_input.value.strip()
+    if not query: return
+
+    # 1. Show User Message in Chat
+    container = document.getElementById("chat-container")
+    display_message(query, "user-msg")
+    user_input.value = ""
+
+    # 2. Check for Team-Specific Knowledge first
+    team_response = check_team_knowledge(query.lower())
+    
+    if team_response:
+        display_message(team_response, "edith-msg")
+    else:
+        # 3. If not about the team, ask Google Gemini
+        display_message("Consulting global database...", "edith-msg", loading=True)
+        gemini_ans = await call_gemini_api(query)
+        # Remove the 'loading' message and show real answer
+        container.lastChild.remove() 
+        display_message(gemini_ans, "edith-msg")
+
+def display_message(text, css_class, loading=False):
+    container = document.getElementById("chat-container")
+    div = document.createElement("div")
+    div.className = f"message {css_class}"
+    tag = "YOU" if css_class == "user-msg" else "EDITH"
+    div.innerHTML = f'<div class="creator-tag">{tag}</div>{text}'
+    container.appendChild(div)
+    container.scrollTop = container.scrollHeight
+
+def check_team_knowledge(q):
+    if "creator" in q:
+        return "My creators are **Yashwanth**, **Saran Kumar**, and **Vipin**. They are the future of technology! 🛠️"
+    if "yashwanth" in q:
+        return "Yashwanth is my Lead Programmer (13 years old, 9th Grade). He is the soul of this project. 👑"
+    return None
+
+async def call_gemini_api(prompt):
+    payload = {
+        "contents": [{"parts": [{"text": f"You are EDITH, a school project AI created by Yashwanth, Saran Kumar, and Vipin. Answer this briefly: {prompt}"}]}]
+    }
+    
+    try:
+        response = await pyfetch(
+            url=URL,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+            body=json.dumps(payload)
+        )
+        data = await response.json()
+        return data['candidates'][0]['content']['parts'][0]['text']
+    except Exception as e:
+        return "Connection error. Protocol failed. 🛡️"
 
