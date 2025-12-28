@@ -3,7 +3,7 @@ import json
 from pyodide.http import pyfetch
 
 # --- CONFIGURATION ---
-API_KEY = "YOUR_GEMINI_API_KEY_HERE"projects/650261417670  # <--- Put your key here!
+API_KEY = projects/650261417670  
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
 
 async def send_message(event):
